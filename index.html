@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload File Lên GitHub</title>
+    <title>Upload File Lên Repo ndlms</title>
     <style>
+        /* CSS tương tự các phiên bản trước */
         body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; background-color: #f9f9f9; }
         h2 { color: #333; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
         input[type="text"], input[type="file"], button { width: 100%; padding: 12px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
@@ -12,19 +13,25 @@
         button:hover { background-color: #2c974b; }
         #output { border: 1px solid #ccc; padding: 15px; min-height: 80px; white-space: pre-wrap; background-color: #fff; border-radius: 4px; overflow-x: auto; font-size: 0.9em; }
         label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        .info { background-color: #e6f7ff; padding: 10px; border-left: 5px solid #007bff; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-    <h2>🚀 Công Cụ Upload File Lên GitHub</h2>
+    <h2>🚀 Upload File Lên Repo: ndlms (Nhánh main)</h2>
     
+    <div class="info">
+        ✅ **Repo:** `ndlms` | **Nhánh:** `main`<br>
+        *Hệ thống sử dụng Serverless Gateway để kích hoạt GitHub Action xử lý commit.*
+    </div>
+
     <label for="owner">Tên Chủ Sở Hữu (Owner):</label>
-    <input type="text" id="owner" placeholder="Ví dụ: myusername" required>
+    <input type="text" id="owner" value="[YOUR_GITHUB_USERNAME]" required>
 
     <label for="repo">Tên Kho Lưu Trữ (Repo):</label>
-    <input type="text" id="repo" placeholder="Ví dụ: my-project-repo" required>
+    <input type="text" id="repo" value="ndlms" readonly required>
 
     <label for="branch">Tên Nhánh (Branch):</label>
-    <input type="text" id="branch" value="main" required>
+    <input type="text" id="branch" value="main" readonly required>
 
     <label for="files">Chọn File (Có thể chọn nhiều file):</label>
     <input type="file" id="files" multiple required>
@@ -35,8 +42,9 @@
     <div id="output">Chờ đợi thao tác upload...</div>
 
     <script>
-        // Địa chỉ này phải là địa chỉ của server bạn đã triển khai (ví dụ: Vercel, Heroku, EC2...)
-        const BACKEND_UPLOAD_ENDPOINT = 'http://localhost:3000/api/upload-github'; 
+        // ⚠️ THAY THẾ DÒNG NÀY BẰNG URL SERVERLESS FUNCTION ĐÃ TRIỂN KHAI CỦA BẠN ⚠️
+        // Ví dụ: https://ndlms-uploader.vercel.app/api/trigger-action
+        const BACKEND_UPLOAD_ENDPOINT = 'https://[YOUR_SERVERLESS_APP_URL]/api/trigger-action'; 
         const COMMIT_MESSAGE = '.';
 
         async function uploadFiles() {
@@ -46,10 +54,10 @@
             const fileInput = document.getElementById('files');
             const outputDiv = document.getElementById('output');
             
-            outputDiv.innerHTML = '<span style="color: blue;">Đang xử lý... Vui lòng chờ.</span>';
+            outputDiv.innerHTML = '<span style="color: blue;">Đang xử lý... Đang gửi yêu cầu kích hoạt GitHub Action.</span>';
 
-            if (!owner || !repo || fileInput.files.length === 0) {
-                outputDiv.innerHTML = '<span style="color: red;">Vui lòng điền đầy đủ Owner, Repo và chọn ít nhất một file.</span>';
+            if (!owner || fileInput.files.length === 0) {
+                outputDiv.innerHTML = '<span style="color: red;">Vui lòng điền tên Owner và chọn ít nhất một file.</span>';
                 return;
             }
 
@@ -57,7 +65,6 @@
             formData.append('owner', owner);
             formData.append('repo', repo);
             formData.append('branch', branch);
-            formData.append('commitMessage', COMMIT_MESSAGE);
 
             for (const file of fileInput.files) {
                 formData.append('files', file, file.name); 
@@ -72,23 +79,19 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    let rawLinks = "✅ **Upload thành công!** Dưới đây là các link raw:\n\n";
-                    if (result.rawUrls && Array.isArray(result.rawUrls)) {
-                         result.rawUrls.forEach(url => {
-                            rawLinks += `- ${url}\n`;
-                        });
-                    } else {
-                        rawLinks += "⚠️ Không nhận được danh sách link raw từ server.";
-                    }
-                    outputDiv.textContent = rawLinks;
-
+                    const actionUrl = `https://github.com/${owner}/${repo}/actions`;
+                    outputDiv.innerHTML = `
+                        <span style="color: green; font-weight: bold;">✅ Yêu cầu đã được gửi đến GitHub Actions!</span><br>
+                        ${result.message || 'Kiểm tra trạng thái commit trong Actions.'}<br>
+                        <a href="${actionUrl}" target="_blank">Xem tiến trình Action tại đây</a>
+                    `;
                 } else {
-                    outputDiv.innerHTML = `<span style="color: red;">❌ Lỗi Upload (${response.status}):</span> ${result.message || 'Lỗi không xác định.'}\n\n<span style="font-style: italic;">Chi tiết lỗi:</span> ${JSON.stringify(result.detail || result, null, 2)}`;
+                    outputDiv.innerHTML = `<span style="color: red;">❌ Lỗi Gateway (${response.status}):</span> ${result.message || 'Lỗi không xác định.'}\n\n<span style="font-style: italic;">Chi tiết lỗi:</span> ${JSON.stringify(result.detail || result, null, 2)}`;
                 }
 
             } catch (error) {
                 console.error('Lỗi khi gửi yêu cầu:', error);
-                outputDiv.innerHTML = `<span style="color: red;">❌ Lỗi kết nối:</span> Vui lòng đảm bảo server backend đang chạy. (${error.message})`;
+                outputDiv.innerHTML = `<span style="color: red;">❌ Lỗi kết nối:</span> Vui lòng đảm bảo Serverless Gateway đang hoạt động. (${error.message})`;
             }
         }
     </script>
