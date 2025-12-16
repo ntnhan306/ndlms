@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload File Lên Repo ndlms</title>
+    <title>Upload File Lên Repo Đích</title>
     <style>
         /* CSS tương tự các phiên bản trước */
         body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; background-color: #f9f9f9; }
@@ -17,21 +17,22 @@
     </style>
 </head>
 <body>
-    <h2>🚀 Upload File Lên Repo: ndlms (Nhánh main)</h2>
+    <h2>🚀 Upload File Lên Kho Lưu Trữ Đích</h2>
     
     <div class="info">
-        ✅ **Repo:** `ndlms` | **Nhánh:** `main`<br>
-        *Hệ thống sử dụng Serverless Gateway để kích hoạt GitHub Action xử lý commit.*
+        ✅ **Repo Chứa App (A):** `ntnhan306/ndlms`<br>
+        ✅ **Repo Đích (B):** `ntnhan306/file` (File sẽ được commit vào đây)<br>
+        *Hệ thống sử dụng Serverless Gateway (trong Repo A) để kích hoạt Action (trong Repo A) commit vào Repo B.*
     </div>
 
-    <label for="owner">Tên Chủ Sở Hữu (Owner):</label>
-    <input type="text" id="owner" value="[YOUR_GITHUB_USERNAME]" required>
+    <label for="target_owner">Chủ Sở Hữu Repo Đích (Owner):</label>
+    <input type="text" id="target_owner" value="ntnhan306" readonly required>
 
-    <label for="repo">Tên Kho Lưu Trữ (Repo):</label>
-    <input type="text" id="repo" value="ndlms" readonly required>
+    <label for="target_repo">Tên Kho Lưu Trữ Đích (Repo):</label>
+    <input type="text" id="target_repo" value="file" readonly required>
 
-    <label for="branch">Tên Nhánh (Branch):</label>
-    <input type="text" id="branch" value="main" readonly required>
+    <label for="branch">Tên Nhánh Đích (Branch):</label>
+    <input type="text" id="branch" value="main" required>
 
     <label for="files">Chọn File (Có thể chọn nhiều file):</label>
     <input type="file" id="files" multiple required>
@@ -43,27 +44,35 @@
 
     <script>
         // ⚠️ THAY THẾ DÒNG NÀY BẰNG URL SERVERLESS FUNCTION ĐÃ TRIỂN KHAI CỦA BẠN ⚠️
-        // Ví dụ: https://ndlms-uploader.vercel.app/api/trigger-action
+        // Serverless Function này phải được host từ repo 'ntnhan306/ndlms'
         const BACKEND_UPLOAD_ENDPOINT = 'https://[YOUR_SERVERLESS_APP_URL]/api/trigger-action'; 
         const COMMIT_MESSAGE = '.';
 
+        // Thông tin Repo Nguồn (Action sẽ được kích hoạt tại đây)
+        const SOURCE_OWNER = 'ntnhan306';
+        const SOURCE_REPO = 'ndlms';
+
         async function uploadFiles() {
-            const owner = document.getElementById('owner').value.trim();
-            const repo = document.getElementById('repo').value.trim();
+            const targetOwner = document.getElementById('target_owner').value.trim();
+            const targetRepo = document.getElementById('target_repo').value.trim();
             const branch = document.getElementById('branch').value.trim();
             const fileInput = document.getElementById('files');
             const outputDiv = document.getElementById('output');
             
             outputDiv.innerHTML = '<span style="color: blue;">Đang xử lý... Đang gửi yêu cầu kích hoạt GitHub Action.</span>';
 
-            if (!owner || fileInput.files.length === 0) {
-                outputDiv.innerHTML = '<span style="color: red;">Vui lòng điền tên Owner và chọn ít nhất một file.</span>';
+            if (fileInput.files.length === 0) {
+                outputDiv.innerHTML = '<span style="color: red;">Vui lòng chọn ít nhất một file.</span>';
                 return;
             }
 
             const formData = new FormData();
-            formData.append('owner', owner);
-            formData.append('repo', repo);
+            // Truyền thông tin repo NGUỒN (để Action biết nơi nó đang chạy)
+            formData.append('source_owner', SOURCE_OWNER);
+            formData.append('source_repo', SOURCE_REPO);
+            // Truyền thông tin repo ĐÍCH (nơi file sẽ được commit)
+            formData.append('target_owner', targetOwner);
+            formData.append('target_repo', targetRepo);
             formData.append('branch', branch);
 
             for (const file of fileInput.files) {
@@ -79,9 +88,9 @@
                 const result = await response.json();
 
                 if (response.ok) {
-                    const actionUrl = `https://github.com/${owner}/${repo}/actions`;
+                    const actionUrl = `https://github.com/${SOURCE_OWNER}/${SOURCE_REPO}/actions`;
                     outputDiv.innerHTML = `
-                        <span style="color: green; font-weight: bold;">✅ Yêu cầu đã được gửi đến GitHub Actions!</span><br>
+                        <span style="color: green; font-weight: bold;">✅ Yêu cầu đã được gửi đến GitHub Actions (Repo ${SOURCE_REPO})!</span><br>
                         ${result.message || 'Kiểm tra trạng thái commit trong Actions.'}<br>
                         <a href="${actionUrl}" target="_blank">Xem tiến trình Action tại đây</a>
                     `;
