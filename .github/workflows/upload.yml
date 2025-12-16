@@ -1,0 +1,36 @@
+name: Upload files to file repo
+
+on:
+  workflow_dispatch:
+    inputs:
+      files:
+        description: "JSON files data"
+        required: true
+
+jobs:
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout target repo
+        uses: actions/checkout@v4
+        with:
+          repository: ntnhan306/file
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Write files
+        run: |
+          echo '${{ github.event.inputs.files }}' > files.json
+          jq -c '.[]' files.json | while read i; do
+            name=$(echo $i | jq -r '.name')
+            data=$(echo $i | jq -r '.content')
+            echo "$data" | base64 -d > "$name"
+          done
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add .
+          git commit -m "."
+          git push
