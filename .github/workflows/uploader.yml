@@ -12,15 +12,16 @@ jobs:
       - name: Checkout code on 'main' branch
         uses: actions/checkout@v4
         with:
-          # Chỉ định nhánh mục tiêu là 'main'
+          # Checkout đúng nhánh mục tiêu
           ref: ${{ github.event.client_payload.branch }} 
-          token: ${{ secrets.GITHUB_TOKEN }} 
+          # Sử dụng SECRET TOKEN đã được người dùng cấu hình (cần quyền 'repo')
+          token: ${{ secrets.TOKEN }} 
 
       - name: Perform Multi-File Commit using Git Database API
         uses: actions/github-script@v7
         with:
-          # Sử dụng GITHUB_TOKEN mặc định (an toàn)
-          github-token: ${{ secrets.GITHUB_TOKEN }} 
+          # SỬ DỤNG SECRET TOKEN MÀ BẠN ĐÃ TẠO
+          github-token: ${{ secrets.TOKEN }} 
           script: |
             const payload = context.payload.client_payload;
             const branch = payload.branch || 'main';
@@ -35,7 +36,7 @@ jobs:
             const owner = context.repo.owner;
             const repo = context.repo.repo;
 
-            // --- 1. Lấy SHA của HEAD commit trên nhánh 'main' ---
+            // --- 1. Lấy SHA của HEAD commit ---
             const { data: { object: { sha: baseCommitSha } } } = await github.rest.git.getRef({
               owner, repo, ref: `heads/${branch}`
             });
@@ -45,7 +46,7 @@ jobs:
               owner, repo, commit_sha: baseCommitSha
             });
             
-            // 3. Tạo Blobs và Tree Items
+            // 3. Tạo Blobs và Tree Items (Giống các bước trước)
             const treeItems = [];
             const rawUrls = [];
             
