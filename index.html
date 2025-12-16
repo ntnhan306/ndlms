@@ -1,108 +1,57 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Upload File Lên Repo Đích</title>
-    <style>
-        /* CSS tương tự các phiên bản trước */
-        body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; background-color: #f9f9f9; }
-        h2 { color: #333; border-bottom: 2px solid #ccc; padding-bottom: 10px; }
-        input[type="text"], input[type="file"], button { width: 100%; padding: 12px; margin-bottom: 15px; box-sizing: border-box; border: 1px solid #ddd; border-radius: 4px; }
-        button { background-color: #2da44e; color: white; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
-        button:hover { background-color: #2c974b; }
-        #output { border: 1px solid #ccc; padding: 15px; min-height: 80px; white-space: pre-wrap; background-color: #fff; border-radius: 4px; overflow-x: auto; font-size: 0.9em; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        .info { background-color: #e6f7ff; padding: 10px; border-left: 5px solid #007bff; margin-bottom: 20px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>Upload file GitHub</title>
 </head>
 <body>
-    <h2>🚀 Upload File Lên Kho Lưu Trữ Đích</h2>
-    
-    <div class="info">
-        ✅ **Repo Chứa App (A):** `ntnhan306/ndlms`<br>
-        ✅ **Repo Đích (B):** `ntnhan306/file` (File sẽ được commit vào đây)<br>
-        *Hệ thống sử dụng Serverless Gateway (trong Repo A) để kích hoạt Action (trong Repo A) commit vào Repo B.*
-    </div>
 
-    <label for="target_owner">Chủ Sở Hữu Repo Đích (Owner):</label>
-    <input type="text" id="target_owner" value="ntnhan306" readonly required>
+<h2>Upload nhiều file</h2>
 
-    <label for="target_repo">Tên Kho Lưu Trữ Đích (Repo):</label>
-    <input type="text" id="target_repo" value="file" readonly required>
+<input type="file" id="files" multiple>
+<button onclick="upload()">Upload</button>
 
-    <label for="branch">Tên Nhánh Đích (Branch):</label>
-    <input type="text" id="branch" value="main" required>
+<pre id="out"></pre>
 
-    <label for="files">Chọn File (Có thể chọn nhiều file):</label>
-    <input type="file" id="files" multiple required>
+<script>
+async function upload() {
+  const fs = [...document.getElementById("files").files];
+  if (!fs.length) return alert("Chưa chọn file");
 
-    <button onclick="uploadFiles()">Commit và Upload (Nội dung commit: ".")</button>
+  const data = [];
 
-    <h3>📝 Kết Quả và Link Raw:</h3>
-    <div id="output">Chờ đợi thao tác upload...</div>
+  for (const f of fs) {
+    const buf = await f.arrayBuffer();
+    data.push({
+      name: f.name,
+      content: btoa(String.fromCharCode(...new Uint8Array(buf)))
+    });
+  }
 
-    <script>
-        // ⚠️ THAY THẾ DÒNG NÀY BẰNG URL SERVERLESS FUNCTION ĐÃ TRIỂN KHAI CỦA BẠN ⚠️
-        // Serverless Function này phải được host từ repo 'ntnhan306/ndlms'
-        const BACKEND_UPLOAD_ENDPOINT = 'https://[YOUR_SERVERLESS_APP_URL]/api/trigger-action'; 
-        const COMMIT_MESSAGE = '.';
-
-        // Thông tin Repo Nguồn (Action sẽ được kích hoạt tại đây)
-        const SOURCE_OWNER = 'ntnhan306';
-        const SOURCE_REPO = 'ndlms';
-
-        async function uploadFiles() {
-            const targetOwner = document.getElementById('target_owner').value.trim();
-            const targetRepo = document.getElementById('target_repo').value.trim();
-            const branch = document.getElementById('branch').value.trim();
-            const fileInput = document.getElementById('files');
-            const outputDiv = document.getElementById('output');
-            
-            outputDiv.innerHTML = '<span style="color: blue;">Đang xử lý... Đang gửi yêu cầu kích hoạt GitHub Action.</span>';
-
-            if (fileInput.files.length === 0) {
-                outputDiv.innerHTML = '<span style="color: red;">Vui lòng chọn ít nhất một file.</span>';
-                return;
-            }
-
-            const formData = new FormData();
-            // Truyền thông tin repo NGUỒN (để Action biết nơi nó đang chạy)
-            formData.append('source_owner', SOURCE_OWNER);
-            formData.append('source_repo', SOURCE_REPO);
-            // Truyền thông tin repo ĐÍCH (nơi file sẽ được commit)
-            formData.append('target_owner', targetOwner);
-            formData.append('target_repo', targetRepo);
-            formData.append('branch', branch);
-
-            for (const file of fileInput.files) {
-                formData.append('files', file, file.name); 
-            }
-            
-            try {
-                const response = await fetch(BACKEND_UPLOAD_ENDPOINT, {
-                    method: 'POST',
-                    body: formData 
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    const actionUrl = `https://github.com/${SOURCE_OWNER}/${SOURCE_REPO}/actions`;
-                    outputDiv.innerHTML = `
-                        <span style="color: green; font-weight: bold;">✅ Yêu cầu đã được gửi đến GitHub Actions (Repo ${SOURCE_REPO})!</span><br>
-                        ${result.message || 'Kiểm tra trạng thái commit trong Actions.'}<br>
-                        <a href="${actionUrl}" target="_blank">Xem tiến trình Action tại đây</a>
-                    `;
-                } else {
-                    outputDiv.innerHTML = `<span style="color: red;">❌ Lỗi Gateway (${response.status}):</span> ${result.message || 'Lỗi không xác định.'}\n\n<span style="font-style: italic;">Chi tiết lỗi:</span> ${JSON.stringify(result.detail || result, null, 2)}`;
-                }
-
-            } catch (error) {
-                console.error('Lỗi khi gửi yêu cầu:', error);
-                outputDiv.innerHTML = `<span style="color: red;">❌ Lỗi kết nối:</span> Vui lòng đảm bảo Serverless Gateway đang hoạt động. (${error.message})`;
-            }
+  await fetch(
+    "https://api.github.com/repos/ntnhan306/ndlms/actions/workflows/upload.yml/dispatches",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": "Bearer YOUR_WORKFLOW_TOKEN",
+        "Accept": "application/vnd.github+json",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        ref: "main",
+        inputs: {
+          files: JSON.stringify(data)
         }
-    </script>
+      })
+    }
+  );
+
+  document.getElementById("out").textContent =
+    fs.map(f =>
+      `https://raw.githubusercontent.com/ntnhan306/file/main/${f.name}`
+    ).join("\n");
+}
+</script>
+
 </body>
 </html>
