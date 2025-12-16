@@ -1,10 +1,10 @@
-name: Upload files to repo file
+name: Upload files to file repo
 
 on:
   workflow_dispatch:
     inputs:
       files:
-        description: "Danh sách file dạng JSON"
+        description: "JSON chứa danh sách file"
         required: true
 
 jobs:
@@ -12,13 +12,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo lưu file (repo 2)
+      - name: Checkout repo đích
         uses: actions/checkout@v4
         with:
           repository: ntnhan306/file
           token: ${{ secrets.TOKEN }}
 
-      - name: Ghi file từ dữ liệu upload
+      - name: Khôi phục file từ JSON
         run: |
           echo '${{ github.event.inputs.files }}' > files.json
           jq -c '.[]' files.json | while read f; do
@@ -27,10 +27,10 @@ jobs:
             echo "$content" | base64 -d > "$name"
           done
 
-      - name: Commit và push sang repo file
+      - name: Commit và push
         run: |
           git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add .
-          git commit -m "." || echo "Nothing to commit"
+          git commit -m "." || echo "Không có thay đổi"
           git push
