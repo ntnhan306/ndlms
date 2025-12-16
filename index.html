@@ -2,24 +2,98 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
-  <title>Upload file GitHub</title>
+  <title>GitHub File Uploader</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: #fff;
+      color: #333;
+      width: 420px;
+      padding: 24px;
+      border-radius: 14px;
+      box-shadow: 0 20px 40px rgba(0,0,0,.25);
+    }
+    h2 { margin-top: 0; }
+    input[type=file] {
+      width: 100%;
+      margin: 12px 0;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      background: #2563eb;
+      color: #fff;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:disabled { opacity: .6; }
+    .links a { display: block; font-size: 13px; }
+
+    /* Popup */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .popup {
+      background: #fff;
+      color: #333;
+      padding: 20px;
+      border-radius: 12px;
+      width: 300px;
+      text-align: center;
+    }
+    .popup.success { border-left: 6px solid #22c55e; }
+    .popup.error { border-left: 6px solid #ef4444; }
+  </style>
 </head>
 <body>
 
-<h2>Upload nhiều file</h2>
+<div class="card">
+  <h2>📤 Upload file GitHub</h2>
+  <p>Upload nhiều file lên repo <b>file</b></p>
 
-<input type="file" id="files" multiple>
-<button onclick="upload()">Upload</button>
+  <input type="file" id="files" multiple>
+  <button id="btn" onclick="upload()">Upload & Commit</button>
 
-<pre id="out"></pre>
+  <div class="links" id="links"></div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="popup" id="popup"></div>
+</div>
 
 <script>
+function showPopup(type, msg) {
+  const overlay = document.getElementById('overlay');
+  const popup = document.getElementById('popup');
+  popup.className = 'popup ' + type;
+  popup.innerHTML = msg;
+  overlay.style.display = 'flex';
+  setTimeout(() => overlay.style.display = 'none', 2500);
+}
+
 async function upload() {
-  const fs = [...document.getElementById("files").files];
-  if (!fs.length) return alert("Chưa chọn file");
+  const fs = [...files.files];
+  if (!fs.length) return showPopup('error', '❌ Chưa chọn file');
+
+  btn.disabled = true;
+  showPopup('success', '⏳ Đang upload, vui lòng chờ...');
 
   const data = [];
-
   for (const f of fs) {
     const buf = await f.arrayBuffer();
     data.push({
@@ -28,28 +102,34 @@ async function upload() {
     });
   }
 
-  await fetch(
-    "https://api.github.com/repos/ntnhan306/ndlms/actions/workflows/upload.yml/dispatches",
-    {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer YOUR_WORKFLOW_TOKEN",
-        "Accept": "application/vnd.github+json",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        ref: "main",
-        inputs: {
-          files: JSON.stringify(data)
-        }
-      })
-    }
-  );
+  try {
+    await fetch(
+      'https://api.github.com/repos/ntnhan306/ndlms/actions/workflows/upload.yml/dispatches',
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer YOUR_WORKFLOW_TOKEN',
+          'Accept': 'application/vnd.github+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ref: 'main',
+          inputs: { files: JSON.stringify(data) }
+        })
+      }
+    );
 
-  document.getElementById("out").textContent =
-    fs.map(f =>
-      `https://raw.githubusercontent.com/ntnhan306/file/main/${f.name}`
-    ).join("\n");
+    showPopup('success', '✅ Upload thành công!');
+
+    links.innerHTML = fs.map(f =>
+      `<a target="_blank" href="https://raw.githubusercontent.com/ntnhan306/file/main/${f.name}">${f.name}</a>`
+    ).join('');
+
+  } catch (e) {
+    showPopup('error', '❌ Lỗi upload');
+  }
+
+  btn.disabled = false;
 }
 </script>
 
