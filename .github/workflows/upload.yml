@@ -1,10 +1,10 @@
-name: Upload files to file repo
+name: Upload files using GitHub App
 
 on:
   workflow_dispatch:
     inputs:
       files:
-        description: "JSON chứa danh sách file"
+        description: "JSON file list"
         required: true
 
 jobs:
@@ -12,13 +12,22 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo đích
+      - name: Create GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          owner: ntnhan306
+          repositories: file
+
+      - name: Checkout repo file
         uses: actions/checkout@v4
         with:
           repository: ntnhan306/file
-          token: ${{ secrets.TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
 
-      - name: Khôi phục file từ JSON
+      - name: Restore uploaded files
         run: |
           echo '${{ github.event.inputs.files }}' > files.json
           jq -c '.[]' files.json | while read f; do
@@ -27,10 +36,10 @@ jobs:
             echo "$content" | base64 -d > "$name"
           done
 
-      - name: Commit và push
+      - name: Commit & push
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
+          git config user.name "NdLMS GitHub App"
+          git config user.email "bot@ndlms.app"
           git add .
-          git commit -m "." || echo "Không có thay đổi"
+          git commit -m "." || echo "Nothing to commit"
           git push
