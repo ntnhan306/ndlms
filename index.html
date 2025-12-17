@@ -99,7 +99,7 @@
 <body>
 
 <div class="card">
-  <h2>GitHub File Uploader</h2>
+  <h2>📤 GitHub File Uploader</h2>
   <p>Upload nhiều file lên repo <b>file</b></p>
 
   <input type="file" id="files" multiple>
@@ -108,7 +108,7 @@
     <p class="empty">Chưa có file nào được chọn</p>
   </div>
 
-  <button id="btn" onclick="upload()">Lưu & Upload</button>
+  <button id="btn" onclick="upload()">💾 Lưu & Upload</button>
 
   <div class="progress">
     <div class="progress-bar" id="progressBar"></div>
@@ -142,6 +142,14 @@ function setProgress(p, text) {
   progressText.innerText = text;
 }
 
+function logDecode(msg) {
+  const popup = document.getElementById('popup');
+  const overlay = document.getElementById('overlay');
+  popup.className = 'popup';
+  popup.innerHTML = `<b>🔍 Decode preview</b><br><pre style="text-align:left;max-height:180px;overflow:auto">${msg}</pre>`;
+  overlay.style.display = 'flex';
+}
+
 function showPopup(type, msg) {
   const overlay = document.getElementById('overlay');
   const popup = document.getElementById('popup');
@@ -163,10 +171,25 @@ async function upload() {
 
   for (const f of fs) {
     const buf = await f.arrayBuffer();
-    data.push({
-      name: f.name,
-      content: btoa(String.fromCharCode(...new Uint8Array(buf)))
-    });
+    const bytes = new Uint8Array(buf);
+    const base64 = btoa(String.fromCharCode(...bytes));
+
+    // preview decode
+    let preview = '';
+    try {
+      preview = new TextDecoder().decode(bytes.slice(0, 200));
+    } catch {
+      preview = '[Binary data]';
+    }
+
+    logDecode(`File: ${f.name}\nSize: ${f.size} bytes\nPreview (first 200 bytes):\n${preview}`);
+
+    data.push({ name: f.name, content: base64 });
+    done++;
+    setProgress(5 + Math.round(done/fs.length * 40), `Đã decode ${done}/${fs.length} file`);
+
+    await new Promise(r => setTimeout(r, 800));
+  });
     done++;
     setProgress(5 + Math.round(done/fs.length * 40), `Đang xử lý file ${done}/${fs.length}`);
   }
@@ -191,7 +214,8 @@ async function upload() {
     );
 
     setProgress(100, 'Hoàn tất – workflow đang chạy');
-    showPopup('success', '✅ Đã gửi file thành công');
+    overlay.style.display = 'none';
+    showPopup('success', '✅ Đã encode & gửi toàn bộ file thành công');
 
     links.innerHTML = fs.map(f =>
       `<a target="_blank" href="https://raw.githubusercontent.com/ntnhan306/file/main/${f.name}">${f.name}</a>`
