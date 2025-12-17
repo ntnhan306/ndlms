@@ -1,111 +1,119 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>GitHub File Uploader</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: linear-gradient(135deg, #1e3c72, #2a5298);
-      color: #fff;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .card {
-      background: #fff;
-      color: #333;
-      width: 420px;
-      padding: 24px;
-      border-radius: 14px;
-      box-shadow: 0 20px 40px rgba(0,0,0,.25);
-    }
-    h2 { margin-top: 0; }
-    input[type=file] {
-      width: 100%;
-      margin: 12px 0;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      background: #2563eb;
-      color: #fff;
-      font-size: 16px;
-      cursor: pointer;
-    }
-    button:disabled { opacity: .6; }
-    .links a { display: block; font-size: 13px; }
+<meta charset="UTF-8">
+<title>NdLMS – GitHub File Uploader</title>
 
-    /* Popup */
-    .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.5);
-      display: none;
-      align-items: center;
-      justify-content: center;
-    }
-    .popup {
-      background: #fff;
-      color: #333;
-      padding: 20px;
-      border-radius: 12px;
-      width: 300px;
-      text-align: center;
-    }
-    .popup.success { border-left: 6px solid #22c55e; }
-    .popup.error { border-left: 6px solid #ef4444; }
-      .file-box {
-      border: 2px dashed #cbd5e1;
-      border-radius: 10px;
-      padding: 10px;
-      min-height: 80px;
-      margin-bottom: 14px;
-      background: #f8fafc;
-      font-size: 14px;
-    }
-    .file-box .file {
-      padding: 6px 8px;
-      background: #e2e8f0;
-      border-radius: 6px;
-      margin-bottom: 6px;
-    }
-    .file-box .empty { color: #64748b; }
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg,#1e3c72,#2a5298);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.card {
+  background: #fff;
+  width: 460px;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0,0,0,.3);
+}
+h2 { margin-top: 0; }
+input[type=file] { width: 100%; margin: 10px 0; }
 
-    .progress {
-      width: 100%;
-      height: 10px;
-      background: #e5e7eb;
-      border-radius: 999px;
-      overflow: hidden;
-      margin-top: 12px;
-    }
-    .progress-bar {
-      height: 100%;
-      width: 0%;
-      background: linear-gradient(90deg,#22c55e,#16a34a);
-      transition: width .3s;
-    }
-    .progress-text {
-      font-size: 13px;
-      margin-top: 6px;
-      color: #475569;
-    }
-  </style>
+.file-box {
+  border: 2px dashed #cbd5e1;
+  border-radius: 10px;
+  padding: 10px;
+  min-height: 90px;
+  background: #f8fafc;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.file {
+  background: #e2e8f0;
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+.empty { color: #64748b; }
+
+button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: #2563eb;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+}
+button:disabled { opacity: .6; }
+
+.progress {
+  margin-top: 12px;
+  width: 100%;
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg,#22c55e,#16a34a);
+  transition: width .3s;
+}
+.progress-text {
+  font-size: 13px;
+  margin-top: 6px;
+  color: #475569;
+}
+
+.links a {
+  display: block;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+/* Popup decode log */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.6);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+.popup {
+  background: #fff;
+  width: 520px;
+  max-height: 360px;
+  padding: 16px;
+  border-radius: 12px;
+  overflow: auto;
+  font-family: monospace;
+  font-size: 13px;
+  white-space: pre-wrap;
+}
+</style>
 </head>
+
 <body>
 
 <div class="card">
-  <h2>📤 GitHub File Uploader</h2>
-  <p>Upload nhiều file lên repo <b>file</b></p>
+  <h2>📤 NdLMS GitHub Uploader</h2>
+  <p>Upload nhiều file → repo <b>file</b></p>
 
   <input type="file" id="files" multiple>
 
   <div class="file-box" id="fileBox">
-    <p class="empty">Chưa có file nào được chọn</p>
+    <div class="empty">Chưa có file nào được chọn</div>
   </div>
 
   <button id="btn" onclick="upload()">💾 Lưu & Upload</button>
@@ -118,6 +126,7 @@
   <div class="links" id="links"></div>
 </div>
 
+<!-- Decode log popup -->
 <div class="overlay" id="overlay">
   <div class="popup" id="popup"></div>
 </div>
@@ -127,14 +136,18 @@ const fileInput = document.getElementById('files');
 const fileBox = document.getElementById('fileBox');
 const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
+const overlay = document.getElementById('overlay');
+const popup = document.getElementById('popup');
 
 fileInput.onchange = () => {
   const fs = [...fileInput.files];
   if (!fs.length) {
-    fileBox.innerHTML = '<p class="empty">Chưa có file nào được chọn</p>';
+    fileBox.innerHTML = '<div class="empty">Chưa có file nào được chọn</div>';
     return;
   }
-  fileBox.innerHTML = fs.map(f => `<div class="file">📄 ${f.name} (${(f.size/1024).toFixed(1)} KB)</div>`).join('');
+  fileBox.innerHTML = fs.map(f =>
+    `<div class="file">📄 ${f.name} (${(f.size/1024).toFixed(1)} KB)</div>`
+  ).join('');
 };
 
 function setProgress(p, text) {
@@ -142,60 +155,53 @@ function setProgress(p, text) {
   progressText.innerText = text;
 }
 
-function logDecode(msg) {
-  const popup = document.getElementById('popup');
-  const overlay = document.getElementById('overlay');
-  popup.className = 'popup';
-  popup.innerHTML = `<b>🔍 Decode preview</b><br><pre style="text-align:left;max-height:180px;overflow:auto">${msg}</pre>`;
+function logDecode(text) {
   overlay.style.display = 'flex';
-}
-
-function showPopup(type, msg) {
-  const overlay = document.getElementById('overlay');
-  const popup = document.getElementById('popup');
-  popup.className = 'popup ' + type;
-  popup.innerHTML = msg;
-  overlay.style.display = 'flex';
-  setTimeout(() => overlay.style.display = 'none', 2600);
+  popup.textContent += text + "\n\n";
 }
 
 async function upload() {
-  const fs = [...fileInput.files];
-  if (!fs.length) return showPopup('error', '❌ Chưa chọn file');
+  const files = [...fileInput.files];
+  if (!files.length) return alert('Chưa chọn file');
 
   btn.disabled = true;
+  popup.textContent = '';
   setProgress(5, 'Chuẩn bị dữ liệu...');
 
-  const data = [];
+  const payload = [];
   let done = 0;
 
-  for (const f of fs) {
+  for (const f of files) {
     const buf = await f.arrayBuffer();
     const bytes = new Uint8Array(buf);
-    const base64 = btoa(String.fromCharCode(...bytes));
 
-    // preview decode
-    let preview = '';
+    let decoded;
     try {
-      preview = new TextDecoder().decode(bytes.slice(0, 200));
+      decoded = new TextDecoder().decode(bytes.slice(0, 300));
     } catch {
-      preview = '[Binary data]';
+      decoded = '[Binary data]';
     }
 
-    logDecode(`File: ${f.name}\nSize: ${f.size} bytes\nPreview (first 200 bytes):\n${preview}`);
+    logDecode(
+`📄 FILE: ${f.name}
+📦 SIZE: ${f.size} bytes
+🧪 DECODE PREVIEW (first 300 bytes):
+${decoded}
+-------------------------------`
+    );
 
-    data.push({ name: f.name, content: base64 });
-    done++;
-    setProgress(5 + Math.round(done/fs.length * 40), `Đã decode ${done}/${fs.length} file`);
+    const base64 = btoa(String.fromCharCode(...bytes));
+    payload.push({ name: f.name, content: base64 });
 
-    await new Promise(r => setTimeout(r, 800));
-  });
     done++;
-    setProgress(5 + Math.round(done/fs.length * 40), `Đang xử lý file ${done}/${fs.length}`);
+    setProgress(5 + Math.round(done / files.length * 40),
+                `Đã xử lý ${done}/${files.length} file`);
+
+    await new Promise(r => setTimeout(r, 600));
   }
 
   try {
-    setProgress(55, 'Gửi yêu cầu lên GitHub Actions...');
+    setProgress(55, 'Gửi workflow GitHub Actions...');
 
     await fetch(
       'https://api.github.com/repos/ntnhan306/ndlms/actions/workflows/upload.yml/dispatches',
@@ -208,22 +214,26 @@ async function upload() {
         },
         body: JSON.stringify({
           ref: 'main',
-          inputs: { files: JSON.stringify(data) }
+          inputs: { files: JSON.stringify(payload) }
         })
       }
     );
 
     setProgress(100, 'Hoàn tất – workflow đang chạy');
-    overlay.style.display = 'none';
-    showPopup('success', '✅ Đã encode & gửi toàn bộ file thành công');
 
-    links.innerHTML = fs.map(f =>
-      `<a target="_blank" href="https://raw.githubusercontent.com/ntnhan306/file/main/${f.name}">${f.name}</a>`
+    setTimeout(() => overlay.style.display = 'none', 1500);
+
+    document.getElementById('links').innerHTML = files.map(f =>
+      `<a target="_blank"
+         href="https://raw.githubusercontent.com/ntnhan306/file/main/${f.name}">
+         🔗 ${f.name}
+       </a>`
     ).join('');
 
   } catch (e) {
-    showPopup('error', '❌ Upload thất bại');
+    alert('Upload thất bại');
     setProgress(0, '');
+    overlay.style.display = 'none';
   }
 
   btn.disabled = false;
