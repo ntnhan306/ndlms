@@ -2,40 +2,52 @@
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
-<title>NdLMS – GitHub File Uploader</title>
+<title>NdLMS – GitHub Uploader</title>
 
 <style>
 * { box-sizing: border-box; }
 body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background: linear-gradient(135deg,#1e3c72,#2a5298);
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg,#f8fafc,#e2e8f0);
   min-height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  color: #0f172a;
 }
+
 .card {
-  background: #fff;
-  width: 460px;
-  padding: 24px;
-  border-radius: 16px;
-  box-shadow: 0 20px 40px rgba(0,0,0,.3);
+  background: #ffffff;
+  width: 480px;
+  padding: 26px;
+  border-radius: 18px;
+  box-shadow: 0 20px 45px rgba(0,0,0,.12);
 }
-h2 { margin-top: 0; }
-input[type=file] { width: 100%; margin: 10px 0; }
+
+h2 {
+  margin-top: 0;
+  color: #2563eb;
+}
+
+p { font-size: 14px; }
+
+input[type=file] {
+  width: 100%;
+  margin: 12px 0;
+}
 
 .file-box {
   border: 2px dashed #cbd5e1;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 10px;
   min-height: 90px;
   background: #f8fafc;
-  margin-bottom: 12px;
   font-size: 14px;
+  margin-bottom: 14px;
 }
 .file {
-  background: #e2e8f0;
+  background: #e5edff;
   padding: 6px 8px;
   border-radius: 6px;
   margin-bottom: 6px;
@@ -46,7 +58,7 @@ button {
   width: 100%;
   padding: 12px;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #2563eb;
   color: #fff;
   font-size: 16px;
@@ -55,7 +67,7 @@ button {
 button:disabled { opacity: .6; }
 
 .progress {
-  margin-top: 12px;
+  margin-top: 14px;
   width: 100%;
   height: 10px;
   background: #e5e7eb;
@@ -65,7 +77,7 @@ button:disabled { opacity: .6; }
 .progress-bar {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg,#22c55e,#16a34a);
+  background: linear-gradient(90deg,#3b82f6,#2563eb);
   transition: width .3s;
 }
 .progress-text {
@@ -78,28 +90,32 @@ button:disabled { opacity: .6; }
   display: block;
   font-size: 13px;
   margin-top: 4px;
+  color: #2563eb;
+  text-decoration: none;
 }
+.links a:hover { text-decoration: underline; }
 
-/* Popup decode log */
+/* Decode log popup */
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,.6);
+  background: rgba(15,23,42,.35);
   display: none;
   align-items: center;
   justify-content: center;
   z-index: 999;
 }
 .popup {
-  background: #fff;
-  width: 520px;
-  max-height: 360px;
-  padding: 16px;
-  border-radius: 12px;
+  background: #ffffff;
+  width: 540px;
+  max-height: 380px;
+  padding: 18px;
+  border-radius: 14px;
   overflow: auto;
-  font-family: monospace;
+  font-family: Consolas, monospace;
   font-size: 13px;
   white-space: pre-wrap;
+  box-shadow: 0 20px 40px rgba(0,0,0,.2);
 }
 </style>
 </head>
@@ -107,8 +123,8 @@ button:disabled { opacity: .6; }
 <body>
 
 <div class="card">
-  <h2>📤 NdLMS GitHub Uploader</h2>
-  <p>Upload nhiều file → repo <b>file</b></p>
+  <h2>📤 NdLMS File Uploader</h2>
+  <p>Upload nhiều file → commit vào repo <b>file</b> bằng GitHub Actions</p>
 
   <input type="file" id="files" multiple>
 
@@ -126,7 +142,7 @@ button:disabled { opacity: .6; }
   <div class="links" id="links"></div>
 </div>
 
-<!-- Decode log popup -->
+<!-- Decode realtime popup -->
 <div class="overlay" id="overlay">
   <div class="popup" id="popup"></div>
 </div>
@@ -138,6 +154,7 @@ const progressBar = document.getElementById('progressBar');
 const progressText = document.getElementById('progressText');
 const overlay = document.getElementById('overlay');
 const popup = document.getElementById('popup');
+const btn = document.getElementById('btn');
 
 fileInput.onchange = () => {
   const fs = [...fileInput.files];
@@ -166,7 +183,7 @@ async function upload() {
 
   btn.disabled = true;
   popup.textContent = '';
-  setProgress(5, 'Chuẩn bị dữ liệu...');
+  setProgress(5, 'Chuẩn bị dữ liệu…');
 
   const payload = [];
   let done = 0;
@@ -175,40 +192,43 @@ async function upload() {
     const buf = await f.arrayBuffer();
     const bytes = new Uint8Array(buf);
 
-    let decoded;
+    let preview;
     try {
-      decoded = new TextDecoder().decode(bytes.slice(0, 300));
+      preview = new TextDecoder().decode(bytes.slice(0, 300));
     } catch {
-      decoded = '[Binary data]';
+      preview = '[Binary data]';
     }
 
     logDecode(
 `📄 FILE: ${f.name}
 📦 SIZE: ${f.size} bytes
-🧪 DECODE PREVIEW (first 300 bytes):
-${decoded}
--------------------------------`
+🧪 DECODE PREVIEW (300 bytes):
+${preview}
+--------------------------------`
     );
 
-    const base64 = btoa(String.fromCharCode(...bytes));
-    payload.push({ name: f.name, content: base64 });
+    payload.push({
+      name: f.name,
+      content: btoa(String.fromCharCode(...bytes))
+    });
 
     done++;
-    setProgress(5 + Math.round(done / files.length * 40),
-                `Đã xử lý ${done}/${files.length} file`);
+    setProgress(
+      5 + Math.round(done / files.length * 40),
+      `Đã xử lý ${done}/${files.length} file`
+    );
 
-    await new Promise(r => setTimeout(r, 600));
+    await new Promise(r => setTimeout(r, 500));
   }
 
   try {
-    setProgress(55, 'Gửi workflow GitHub Actions...');
+    setProgress(55, 'Gửi workflow GitHub Actions…');
 
     await fetch(
       'https://api.github.com/repos/ntnhan306/ndlms/actions/workflows/upload.yml/dispatches',
       {
         method: 'POST',
         headers: {
-          'Authorization': 'Bearer YOUR_WORKFLOW_TOKEN',
           'Accept': 'application/vnd.github+json',
           'Content-Type': 'application/json'
         },
@@ -220,7 +240,6 @@ ${decoded}
     );
 
     setProgress(100, 'Hoàn tất – workflow đang chạy');
-
     setTimeout(() => overlay.style.display = 'none', 1500);
 
     document.getElementById('links').innerHTML = files.map(f =>
